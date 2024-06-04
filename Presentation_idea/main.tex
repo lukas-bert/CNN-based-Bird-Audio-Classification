@@ -1,0 +1,34 @@
+\documentclass[compress,aspectratio=1610, xcolor=table]{beamer}
+\usepackage{xcolor}
+\renewcommand<>\cellcolor[1]{\only#2{\beameroriginal\cellcolor{#1}}}
+\input{header.tex}
+\title[Bird Species Classification]{Bird Species Classification Using Audio Signal Processing and Convolutional Neural Networks}
+\subtitle{Machine Learning Seminar (not Lecture)}
+\date[6 June 2024]{6th of June, 2024}
+\author[L.~Bertsch and T.~Troska]{Lukas Bertsch and Tom Troska}
+\institute[TU Dortmund]{TU Dortmund - Faculty of Physics}
+\titlegraphic{
+  \includegraphics[width=0.6\textwidth]{images/bird.jpg}
+  }
+\sisetup
+  {
+  list-exponents = combine-bracket ,
+  product-exponents = combine-bracket ,
+  range-exponents = combine-bracket
+  }
+\usepackage{caption}
+\captionsetup[figure]{labelformat=empty}
+\usepackage{tikz}
+\usepackage[compat=1.1.0]{tikz-feynman} 
+\AtBeginDocument{\RenewCommandCopy\qty\SI}
+
+%\input{feynmans.tex}
+
+\begin{document}
+
+\maketitle
+
+\input{content/frames.tex}
+
+\end{document}
+

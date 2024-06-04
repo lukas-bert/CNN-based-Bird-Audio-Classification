@@ -1,0 +1,13 @@
+# set paths of repository and storage folder (for files)
+
+path_storage = ""
+path_repo = ""
+
+rule:
+    input:
+    output:
+    shell:
+
+# execute all required rules
+rule all:
+    input:
