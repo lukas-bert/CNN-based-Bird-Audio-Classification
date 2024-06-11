@@ -1,13 +1,14 @@
 # set paths of repository and storage folder (for files)
 
-path_storage = ""
-path_repo = ""
+path_storage = "../data/"
+dataset_name = "dataset"
 
-rule:
-    input:
-    output:
-    shell:
+rule download_dataset:
+    input: 
+        script = "scripts/" + "download_dataset.py"
+    output: path_storage + dataset_name + ".csv"
+    shell: "python {input.script} {path_storage} {dataset_name}" # overwrite existing folder with '-o' flag
 
 # execute all required rules
 rule all:
-    input:
+    input: path_storage + dataset_name + ".csv"

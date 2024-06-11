@@ -309,6 +309,7 @@ logs/**
 __pycache__
 */build
 *build/
+*data/
 *.toc
 *.nav
 *.log
