@@ -1,7 +1,7 @@
 # set paths of repository and storage folder (for files)
 
 path_storage = "../data/"
-dataset_name = "dataset"
+dataset_name = "dataset10"
 
 rule download_dataset:
     input: 

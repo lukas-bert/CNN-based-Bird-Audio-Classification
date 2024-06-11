@@ -28,8 +28,9 @@ class Config():
                  recording_type = "song",
                  min_sr = 24000,
                  max_other_birds = 2,
-                 min_files = 100,
-                 max_files = 500,
+                 min_files = 10,
+                 max_files = 30,
+                 max_nb_classes = 10
                    ):
         
         self.min_length = min_length
@@ -40,6 +41,7 @@ class Config():
         self.max_other_birds = max_other_birds
         self.min_files = min_files
         self.max_files = max_files
+        self.max_nb_classes = max_nb_classes
 
 cfg = Config()
 
@@ -202,7 +204,7 @@ print(f"Dropping {len(df_dataset[df_dataset['nr other'] > cfg.max_other_birds])}
 df_dataset = df_dataset[df_dataset["nr other"] <= cfg.max_other_birds]
 
 # Drop species with too low available recordings
-counts = df_dataset.groupby("en")["en"].count().reset_index(name='count').sort_values("count", ascending = False)
+counts = df_dataset.groupby("en")["en"].count().reset_index(name='count').sort_values("count", ascending = False)[:cfg.max_nb_classes]
 remaining_species = counts[counts["count"] > cfg.min_files]["en"].tolist()
 
 df_dataset = df_dataset[df_dataset["en"].apply(lambda x: x in remaining_species)]
