@@ -1,10 +1,6 @@
 # imports
 import pandas as pd
-import numpy as np
-from pathlib import Path
-import sys
 import os
-import time
 from maad import util
 import warnings
 # suppress all warnings
@@ -21,30 +17,18 @@ parser.add_argument('-o', '--overwrite', action='store_true',
 args = parser.parse_args()
 
 # Configurations 
-class Config():
-    def __init__(self, min_length = 5, 
-                 max_length = 300, 
-                 min_quality = 'B', 
-                 recording_type = "song",
-                 min_sr = 24000,
-                 max_other_birds = 2,
-                 min_files = 10,
-                 max_files = 30,
-                 max_nb_classes = 10
-                   ):
-        
-        self.min_length = min_length
-        self.max_length = max_length
-        self.min_quality = min_quality
-        self.recording_type = recording_type
-        self.min_sr = min_sr
-        self.max_other_birds = max_other_birds
-        self.min_files = min_files
-        self.max_files = max_files
-        self.max_nb_classes = max_nb_classes
+class cfg():
+    min_length = 5
+    max_length = 300
+    min_quality = 'B'
+    recording_type = "song"
+    min_sr = 24000
+    max_other_birds = 2
+    min_files = 10
+    max_files = 30
+    max_nb_classes = 10
 
-cfg = Config()
-
+                  
 # Function to convert recording time format to seconds
 def convert_to_seconds(time_str):
     parts = list(map(int, time_str.split(':')))
@@ -219,15 +203,15 @@ print("Proceeding to download files...")
 
 df_dataset = util.xc_selection(df_dataset,
                                max_nb_files = cfg.max_files,
-                               #max_length='05:00', # redundant
-                               #min_length='00:10',
+                               max_length='05:00', 
+                               min_length='00:05',
                                min_quality = cfg.min_quality,
                                verbose = True )
 
 print(f"Downloading {len(df_dataset)} files... This may take a few minutes.")
 print(f"Overwriting existing folder = {args.overwrite}")
 
-df_dataset = util.xc_download(df_dataset,
+df_temp = util.xc_download(df_dataset,
                  rootdir = args.path_storage,
                  dataset_name = args.dataset_name,
                  overwrite = args.overwrite,
@@ -235,6 +219,13 @@ df_dataset = util.xc_download(df_dataset,
                  verbose = True)
 
 df_path = os.path.join(args.path_storage, f"{args.dataset_name}.csv")
-print(f"Saving dataframe. ({len(df_dataset)} entries in total.)")
-df_dataset.to_csv(df_path, index = False)
+
+if not os.path.isfile(df_path):
+    print(f"Saving dataframe. ({len(df_dataset)} entries in total.)")
+    df_dataset.to_csv(df_path, index = False)
+else:
+    print(f"Dataframe already exists, saving as {args.dataset_name}2.csv")
+    print(f"Saving dataframe. ({len(df_dataset)} entries in total.)")
+    df_path = os.path.join(args.path_storage, f"{args.dataset_name}2.csv")
+    df_dataset.to_csv(df_path, index = False)
 print("Finisehd.")
