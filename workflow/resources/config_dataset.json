@@ -1,0 +1,11 @@
+{
+    "min_length": 5,
+    "max_length": 300,
+    "min_quality": "B",
+    "recording_type": "song",
+    "min_sr": 20000,
+    "max_other_birds": 2,
+    "min_files": 100,
+    "max_files": 500,
+    "max_nb_classes": 50
+}

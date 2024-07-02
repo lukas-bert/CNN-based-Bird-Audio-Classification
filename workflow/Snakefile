@@ -1,14 +1,29 @@
 # set paths of repository and storage folder (for files)
 
 path_storage = "../data/"
-dataset_name = "dataset10"
+dataset_name = "dataset"
 
 rule download_dataset:
     input: 
-        script = "scripts/" + "download_dataset.py"
-    output: path_storage + dataset_name + ".csv"
-    shell: "python {input.script} {path_storage} {dataset_name}" # overwrite existing folder with '-o' flag
+        script = "scripts/download_dataset.py",
+        config = "resources/config_" + dataset_name + ".json"
+    output: 
+        path_storage + dataset_name + "_raw.csv"
+    shell: 
+        "python {input.script} {path_storage} {dataset_name} {input.config}" # overwrite existing folder with '-o' flag
+
+rule get_spectrograms:
+    input: 
+        script = "scripts/compute_spectrograms.py",
+        config = "resources/config.json",
+        dataframe = path_storage + dataset_name + "_raw.csv"
+    output: 
+        path_storage + dataset_name + ".csv"
+    shell: 
+        "python {input.script} {input.dataframe} {input.config}" 
 
 # execute all required rules
-rule all:
-    input: path_storage + dataset_name + ".csv"
+rule all:   
+    input: 
+        path_storage + dataset_name + ".csv"
+

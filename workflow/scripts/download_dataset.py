@@ -11,22 +11,32 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('path_storage', help = 'Path to save dataset to')
 parser.add_argument('dataset_name', help = 'Name of the dataset. Will create subfolder with dataset_name')
+parser.add_argument('config', help = 'Configuration file to build the dataset.')
 parser.add_argument('-o', '--overwrite', action='store_true',
                     help='overwrite storage folder if existing')
 
 args = parser.parse_args()
 
+import json
+
+config = json.load(open(args.config, "r"))
+
+print("Downloading dataset with the following configurations:")
+print("Name: ", args.dataset_name)
+for x in config:
+    print(x, "= ", config[x])
+print("--------------------------------------------------")
 # Configurations 
 class cfg():
-    min_length = 5
-    max_length = 300
-    min_quality = 'B'
-    recording_type = "song"
-    min_sr = 24000
-    max_other_birds = 2
-    min_files = 10
-    max_files = 30
-    max_nb_classes = 10
+    min_length = config["min_length"]
+    max_length = config["max_length"]
+    min_quality = config["min_quality"]
+    recording_type = config["recording_type"]
+    min_sr = config["min_sr"]
+    max_other_birds = config["max_other_birds"]
+    min_files = config["min_files"]
+    max_files = config["max_files"]
+    max_nb_classes = config["max_nb_classes"]
 
                   
 # Function to convert recording time format to seconds
@@ -159,7 +169,7 @@ min_quality_ = {"A": "B",
 df_query = pd.DataFrame() # save querries as dataframe
 df_query['param1'] = gen # select only wanted species
 df_query['param2'] = sp
-df_query['param3'] = f'type:{cfg.recording_type}' # type of recording should include "song"
+df_query['param3'] = f"type:{cfg.recording_type}" # type of recording should include "song"
 #df_query['param4'] ='area:europe' # only recordings from europe
 df_query['param5'] = f'len:{cfg.min_length}-{cfg.max_length}' # only recordings longer than 5 seconds, shorter than 5 minutes
 df_query['param6'] = f'q:">{min_quality_[cfg.min_quality]}"' # only recordings of quality 'A' or 'B'
@@ -211,21 +221,21 @@ df_dataset = util.xc_selection(df_dataset,
 print(f"Downloading {len(df_dataset)} files... This may take a few minutes.")
 print(f"Overwriting existing folder = {args.overwrite}")
 
-df_temp = util.xc_download(df_dataset,
+df_dataset = util.xc_download(df_dataset,
                  rootdir = args.path_storage,
                  dataset_name = args.dataset_name,
                  overwrite = args.overwrite,
                  save_csv= True,
                  verbose = True)
 
-df_path = os.path.join(args.path_storage, f"{args.dataset_name}.csv")
+df_path = os.path.join(args.path_storage, f"{args.dataset_name}_raw.csv")
 
 if not os.path.isfile(df_path):
-    print(f"Saving dataframe. ({len(df_dataset)} entries in total.)")
+    print(f"Saving dataframe. ({len(df_dataset)} entries in total)")
     df_dataset.to_csv(df_path, index = False)
 else:
-    print(f"Dataframe already exists, saving as {args.dataset_name}2.csv")
-    print(f"Saving dataframe. ({len(df_dataset)} entries in total.)")
-    df_path = os.path.join(args.path_storage, f"{args.dataset_name}2.csv")
+    print(f"Dataframe already exists, saving as {args.dataset_name}_raw_2.csv")
+    print(f"Saving dataframe. ({len(df_dataset)} entries in total)")
+    df_path = os.path.join(args.path_storage, f"{args.dataset_name}_raw_2.csv")
     df_dataset.to_csv(df_path, index = False)
 print("Finisehd.")

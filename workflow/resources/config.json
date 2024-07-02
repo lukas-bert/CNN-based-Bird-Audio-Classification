@@ -1,0 +1,12 @@
+{
+    "seed": 42,
+    "sampling_rate": 22050,
+    "duration": 15,
+    "hop_length": 2048,
+    "nfft": 4096,
+    "n_mels": 128,
+    "batch_size": 32,
+    "n_epochs": 50,
+    "max_nb_classes": 50,
+    "test_size": 0.2
+}
