@@ -18,12 +18,13 @@ rule get_spectrograms:
         config = "resources/config.json",
         dataframe = path_storage + dataset_name + "_raw.csv"
     output: 
-        path_storage + dataset_name + ".csv"
+        path_storage + dataset_name + "_train.csv",
+        path_storage + dataset_name + "_test.csv"
     shell: 
         "python {input.script} {input.dataframe} {input.config}" 
 
 # execute all required rules
 rule all:   
     input: 
-        path_storage + dataset_name + ".csv"
+        path_storage + dataset_name + "_train.csv"
 

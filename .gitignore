@@ -313,3 +313,5 @@ __pycache__
 *.toc
 *.nav
 *.log
+*wandb/
+*models/

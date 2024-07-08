@@ -90,19 +90,45 @@ def load_spectrogram_slice(hdf5_path, name, start_row = 0, end_row =None, start_
     return spectrogram_slice
 
 if __name__ == "__main__":
+
+    # compute spectrograms
+    if not "spectrogram" in df.columns:
+        df["spectrogram"] = None
+
+    if not "length_spectrogram" in df.columns:
+        df["length_spectrogram"] = None
+    deletions = []
+    for i in tqdm(df.index):
+        if df.loc[i, "spectrogram"] is None:
+            filepath = df.fullfilename.iloc[i]
+            name = Path(filepath).stem
+
+            if os.path.isfile(os.path.dirname(filepath) + "/spectrograms.h5"):
+                with h5py.File(os.path.dirname(filepath) + "/spectrograms.h5", 'r') as f:
+                    if name in list(f.keys()):
+                        df.loc[i, "length_spectrogram"] = f[name][None:None, None:None].shape[1]
+                        df.loc[i, "spectrogram"] = name
+                        continue
+            try:
+                df.loc[i, "length_spectrogram"] = compute_and_save_spec(filepath, return_length = True)
+                df.loc[i, "spectrogram"] = name
+            except Exception as e:
+                print(f"Failed to compute spectrogram for file {filepath}.")
+                print(f"Exception: {e}")
+                deletions.append(i)
+                print(f"Deleting row frome dataframe.")
+    print("Deleting rows: ", deletions)
+    print(f"{len(deletions)} deletions in total.")
+    df.drop(index = deletions, inplace = True)
+
     # set test dataset
     rng = np.random.default_rng(seed=cfg.seed)
     df["random"] = rng.uniform(size=len(df))
-    df["isTest"] = df["random"] <= cfg.test_size
-    # compute spectrograms
-    for i in tqdm(range(len(df))):
-        if not "spectrogram" in df.columns:
-            df["spectrogram"] = None
-        if not "length_spectrogram" in df.columns:
-            df["length_spectrogram"] = None
-        filepath = df.fullfilename.iloc[i]
-        if df.loc[i, "spectrogram"] is None:
-            df.loc[i, "length_spectrogram"] = compute_and_save_spec(filepath, return_length = True)
-            df.loc[i, "spectrogram"] = Path(filepath).stem
+    df_train = df[df["random"] >= cfg.test_size]
+    df_test = df[df["random"] < cfg.test_size]
 
-    df.to_csv(args.path_df[:-8] + ".csv", index = False)
+    df_train["random"] = rng.uniform(size=len(df_train))
+    df_test["random"] = rng.uniform(size=len(df_test))
+    print("Saving dataframes.")
+    df_train.to_csv(args.path_df[:-8] + "_train.csv", index = False)
+    df_test.to_csv(args.path_df[:-8] + "_test.csv", index = False)

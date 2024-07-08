@@ -21,6 +21,15 @@ import json
 
 config = json.load(open(args.config, "r"))
 
+print(os.path.isfile(os.path.join(args.path_storage, f"{args.dataset_name}_raw.csv")))
+print(os.path.isfile(os.path.join("../", args.path_storage, f"{args.dataset_name}_raw.csv")))
+print(os.path.join(args.path_storage, f"{args.dataset_name}_raw.csv"))
+
+if os.path.isfile(os.path.join(args.path_storage, f"{args.dataset_name}_raw.csv")):
+    print("Dataset already exists, aborting...")
+    print("Delete ", os.path.join(args.path_storage, f"{args.dataset_name}_raw.csv"), " to rerun this script.")
+    exit()
+
 print("Downloading dataset with the following configurations:")
 print("Name: ", args.dataset_name)
 for x in config:
