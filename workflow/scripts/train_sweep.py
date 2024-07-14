@@ -76,7 +76,7 @@ def train():
         monitor="val_accuracy",
         patience=3,
         verbose=0,
-        mode="min",
+        mode="max",
         restore_best_weights=False,
         start_from_epoch=5,
     )
