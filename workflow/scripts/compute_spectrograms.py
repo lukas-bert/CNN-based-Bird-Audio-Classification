@@ -6,7 +6,6 @@ from tqdm import tqdm
 
 import h5py
 from pathlib import Path
-import sys
 import os
 
 # parse arguments (storage dir)
@@ -24,10 +23,6 @@ import json
 ## Conifgurations
 config = json.load(open(args.config, "r"))
 
-# Read dataframe
-if __name__ == "__main__":
-    df = pd.read_csv(args.path_df)
-
 class cfg:
     seed = config["seed"]
     # audio settings
@@ -43,28 +38,16 @@ class cfg:
     fmax = sr/2 # maximum frequency in the melspectrograms
     input_dim = (n_mels, int(duration*sr//hop_length + 1))
     
-    #
     test_size = config["test_size"]
-
-    # training settings
-    #batch_size = 32
-    #n_epochs = 50
-    
-    # class labels/names
-    names = list(np.unique(df.en))
-    n_classes = len(names)
-    labels = list(range(n_classes))
-    label2name = dict(zip(labels, names))
-    name2label = {v:k for k,v in label2name.items()}
 
 def compute_spec(filepath, sr=cfg.sr, duration=cfg.duration, nfft=cfg.nfft, hop_length=cfg.hop_length, n_mels=cfg.n_mels, fmax=cfg.fmax):
     audio, sr = librosa.load(filepath, sr = sr)
-    # randomly pad clip if shorter
-    if len(audio) < duration*sr:
-        _ = np.zeros(duration*sr)
-        rand_idx = np.random.randint(0, duration*sr-len(audio))
-        _[rand_idx:rand_idx + len(audio)] = audio
-        audio = _
+    ## randomly pad clip if shorter
+    #if len(audio) < duration*sr:
+    #    _ = np.zeros(duration*sr)
+    #    rand_idx = np.random.randint(0, duration*sr-len(audio))
+    #    _[rand_idx:rand_idx + len(audio)] = audio
+    #    audio = _
     mel_spectrogram = librosa.feature.melspectrogram(y=audio, sr=sr, n_fft=nfft, hop_length=hop_length, n_mels=n_mels, fmin = 0, fmax=fmax)
     log_mel_spectrogram = librosa.power_to_db(mel_spectrogram)
     return log_mel_spectrogram
@@ -90,7 +73,8 @@ def load_spectrogram_slice(hdf5_path, name, start_row = 0, end_row =None, start_
     return spectrogram_slice
 
 if __name__ == "__main__":
-
+    # Read dataframe
+    df = pd.read_csv(args.path_df)
     # compute spectrograms
     if not "spectrogram" in df.columns:
         df["spectrogram"] = None
@@ -120,6 +104,16 @@ if __name__ == "__main__":
     print("Deleting rows: ", deletions)
     print(f"{len(deletions)} deletions in total.")
     df.drop(index = deletions, inplace = True)
+
+    # add species label
+
+    unique_species = sorted(df['en'].unique())
+
+    # Create a mapping from species to labels
+    species_to_label = {species: idx for idx, species in enumerate(unique_species)}
+
+    # Map the species to labels and create the new column
+    df['label'] = df['en'].map(species_to_label)
 
     # set test dataset
     rng = np.random.default_rng(seed=cfg.seed)

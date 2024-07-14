@@ -37,11 +37,7 @@ class cfg:
     batch_size = config["batch_size"] # 32
     n_epochs = config["n_epochs"]
 
-    names = list(np.unique(df.en))
-    n_classes = len(names)
-    labels = list(range(n_classes))
-    label2name = dict(zip(labels, names))
-    name2label = {v:k for k,v in label2name.items()}
+    n_classes = len(np.unique(df.en))
 
 tf.keras.utils.set_random_seed(cfg.seed)
 ################################################################################################################
@@ -190,7 +186,7 @@ def predict_file(df, ID, model, cfg=cfg):
 
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, list_IDs, labels, dataframe,
+    def __init__(self, list_IDs, dataframe,
                  cfg = cfg,
                  n_channels =  1,
                  shuffle=True
@@ -199,7 +195,6 @@ class DataGenerator(keras.utils.Sequence):
         self.dim = cfg.input_dim
         self.n_channels = n_channels
         self.batch_size = cfg.batch_size
-        self.labels = labels
         self.list_IDs = list_IDs
         self.dataframe = dataframe
         self.n_classes = cfg.n_classes
@@ -240,7 +235,7 @@ class DataGenerator(keras.utils.Sequence):
             # Store sample
             X[i,] = load_random_spec_slice(self.dataframe, ID, cfg = self.cfg).reshape(*self.dim, self.n_channels)
             # Store class
-            y[i] = self.cfg.name2label[df.en.iloc[ID]]
+            y[i] = self.dataframe.label.iloc[ID]
         X = X.reshape(len(X), *self.dim, self.n_channels)
         return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
 
