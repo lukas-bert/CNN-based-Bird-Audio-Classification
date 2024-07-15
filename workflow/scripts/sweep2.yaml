@@ -5,15 +5,15 @@ metric:
   name: val_accuracy
 parameters:
   up_sample_thr:
-    value: 100
+    value: 250
   model_name:
-    values: ["Basemodel", "Deep", "Flat"]
+    value: "Deep"
   optimizer:
-    values: ["adam", "sgd"]
+    value: "adam"
   activation:
-    values: ["relu", "leaky_relu", "elu", "selu"]
+    value: "leaky_relu"
   n_filters:
-    values: [16, 32, 64]
+    values: [32, 64]
   tf_mask:
     values: [True, False]
   batch_norm: 
@@ -27,8 +27,10 @@ parameters:
     min: 0
     max: 0.7
   duration:
-    values: [5, 10, 15, 20]
+    distribution: uniform
+    min: 5
+    max: 20
   batch_size:
-    values: [16, 32, 64]
+    value: 32
   n_epochs:
     value: 30
