@@ -64,17 +64,23 @@ def train():
     tf.keras.utils.set_random_seed(cfg.seed)
 
     # prepare data generators
-    df = upsample_data(downsample_data(df, thr=cfg.thr), thr=cfg.thr)
+    #df = upsample_data(downsample_data(df, thr=cfg.thr), thr=cfg.thr)
     df.fullfilename = "../" + df.fullfilename
 
-    id_train, id_val, y_train, y_val = train_test_split(range(len(df)), df["label"].to_list(), test_size = 0.3, random_state = cfg.seed)
+    #id_train, id_val, y_train, y_val = train_test_split(range(len(df)), df["label"].to_list(), test_size = 0.3, random_state = cfg.seed)
 
-    training_generator = DataGenerator(id_train, df, cfg = cfg)
-    validation_generator = DataGenerator(id_val, df, cfg = cfg)
+    from sklearn.model_selection import train_test_split
+
+    df_train, df_val = train_test_split(df, test_size=0.2, random_state=42)
+    df_val.reset_index(drop=True, inplace = True)
+    df_train = upsample_data(downsample_data(df_train, thr=250), thr=250)
+
+    training_generator = DataGenerator(df_train.index.to_list(), df_train, cfg = cfg)
+    validation_generator = DataGenerator(df_val.index.to_list(), df_val, cfg = cfg)
 
     early_stopping = EarlyStopping(
         monitor="val_accuracy",
-        patience=3,
+        patience=4,
         verbose=0,
         mode="max",
         restore_best_weights=False,
