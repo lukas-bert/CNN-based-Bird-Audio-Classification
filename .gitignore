@@ -315,4 +315,14 @@ __pycache__
 *.log
 *wandb/
 *models/
-    
+*share/
+*/share
+*/.conda
+*.conda
+*/bin
+*/etc
+*/include
+**/.DS_Store
+.DS_Store
+._.DS_Store
+**/._.DS_Store
