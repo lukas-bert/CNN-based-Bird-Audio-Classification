@@ -1,0 +1,13 @@
+prefix=/Users/ttroska/Desktop/ML.nosync/CNN-based-Bird-Audio-Classification/.conda
+exec_prefix=/Users/ttroska/Desktop/ML.nosync/CNN-based-Bird-Audio-Classification/.conda
+libdir=/Users/ttroska/Desktop/ML.nosync/CNN-based-Bird-Audio-Classification/.conda/lib
+sharedlibdir=/Users/ttroska/Desktop/ML.nosync/CNN-based-Bird-Audio-Classification/.conda/lib
+includedir=/Users/ttroska/Desktop/ML.nosync/CNN-based-Bird-Audio-Classification/.conda/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.13
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}
