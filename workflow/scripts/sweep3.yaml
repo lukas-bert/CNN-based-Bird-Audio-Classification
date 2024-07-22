@@ -1,0 +1,34 @@
+program: train_sweep.py
+method: random
+metric:
+  goal: maximize
+  name: val_accuracy
+parameters:
+  up_sample_thr:
+    value: 350
+  model_name:
+    value: "Deep"
+  optimizer:
+    value: "adam"
+  activation:
+    values: ["leaky_relu", "mish"]
+  n_filters:
+    value: 64
+  tf_mask:
+    value: True
+  batch_norm: 
+    value: False
+  dropout1:
+    distribution: uniform 
+    min: 0
+    max: 0.7
+  dropout2:
+    distribution: uniform 
+    min: 0
+    max: 0.7
+  duration:
+    value: 15
+  batch_size:
+    value: 32
+  n_epochs:
+    value: 30

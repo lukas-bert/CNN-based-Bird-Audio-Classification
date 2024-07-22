@@ -78,6 +78,7 @@ def build_DeepModel(cfg):
         x = tfm_layer(x)
     
     # Base model
+    # Conv1
     x = Conv2D(cfg.n_filters, kernel_size=(3, 3), padding='valid')(x)
     if cfg.batch_norm:
         x = BatchNormalization()(x)
@@ -87,6 +88,7 @@ def build_DeepModel(cfg):
         x = Activation(cfg.activation)(x)
     x = MaxPooling2D(pool_size=(2, 2), padding="valid")(x)
 
+    # Conv2
     x = Conv2D(2*cfg.n_filters, kernel_size=(3, 3), padding='valid')(x)
     if cfg.batch_norm:
         x = BatchNormalization()(x)
@@ -96,6 +98,7 @@ def build_DeepModel(cfg):
         x = Activation(cfg.activation)(x)
     x = MaxPooling2D(pool_size=(2, 2), padding="valid")(x)
 
+    # Conv3
     x = Conv2D(2*cfg.n_filters, kernel_size=(3, 3), padding='valid')(x)
     if cfg.batch_norm:
         x = BatchNormalization()(x)
@@ -104,10 +107,12 @@ def build_DeepModel(cfg):
     else:
         x = Activation(cfg.activation)(x)
     x = MaxPooling2D(pool_size=(2, 2), padding="valid")(x)
-
     x = Dropout(cfg.dropout1)(x)
+    
+    # Flatten
     x = Flatten()(x)
 
+    # Dense1
     x = Dense(2*cfg.n_filters)(x)
     if cfg.batch_norm:
         x = BatchNormalization()(x)
@@ -117,6 +122,7 @@ def build_DeepModel(cfg):
         x = Activation(cfg.activation)(x)
     x = Dropout(cfg.dropout2)(x)
 
+    # Dense2
     x = Dense(cfg.n_filters)(x)
     if cfg.batch_norm:
         x = BatchNormalization()(x)
@@ -124,16 +130,10 @@ def build_DeepModel(cfg):
         x = LeakyReLU(alpha=0.01)(x)
     else:
         x = Activation(cfg.activation)(x)
-    output = Dense(cfg.n_classes, activation='softmax')(x)
 
-    x = Dense(cfg.n_filters//2)(x)
-    if cfg.batch_norm:
-        x = BatchNormalization()(x)
-    if cfg.activation == 'leaky_relu':
-        x = LeakyReLU(alpha=0.01)(x)
-    else:
-        x = Activation(cfg.activation)(x)
-    x = Dropout(cfg.dropout2)(x)
+    # Output layer
+    
+    output = Dense(cfg.n_classes, activation='softmax')(x)
     
     model = tf.keras.models.Model(inputs=inp, outputs=output, name = "Basemodel")
     model.compile(loss='categorical_crossentropy', optimizer=cfg.optimizer, metrics=['accuracy'])

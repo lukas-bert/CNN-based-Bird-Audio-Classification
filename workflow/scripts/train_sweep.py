@@ -6,18 +6,39 @@ import tensorflow as tf
 import tensorflow_io as tfio
 import tensorflow_probability as tfp
 import keras
+# Set logging level to avoid unnecessary messages
+tf.get_logger().setLevel('ERROR')
+# Set autograph verbosity to avoid unnecessary messages
+tf.autograph.set_verbosity(0)
+
 from keras.callbacks import EarlyStopping
 from wandb.integration.keras import WandbMetricsLogger
 from sklearn.model_selection import train_test_split
 
 import json
+import warnings
+# suppress all warnings
+warnings.filterwarnings("ignore")
 
-from functions import upsample_data, downsample_data, DataGenerator
+
+from functions import upsample_data, downsample_data, DataGenerator, ClearMemory
 from models import build_basemodel, build_FlatModel, build_DeepModel
 
+from tensorflow.keras.mixed_precision import Policy, set_global_policy
 
-# runs might crash on my gpu, idk why
-#tf.config.set_visible_devices([], 'GPU')
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        policy = Policy('mixed_float16')
+        set_global_policy(policy)
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+            #tf.config.experimental.set_virtual_device_configuration(
+            #    gpu,
+            #    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=16000)])
+    except RuntimeError as e:
+        print(e)
 
 def train():
     df = pd.read_csv("../../data/dataset_train.csv")
@@ -73,7 +94,7 @@ def train():
 
     df_train, df_val = train_test_split(df, test_size=0.2, random_state=42)
     df_val.reset_index(drop=True, inplace = True)
-    df_train = upsample_data(downsample_data(df_train, thr=250), thr=250)
+    df_train = upsample_data(df_train, thr=cfg.thr)
 
     training_generator = DataGenerator(df_train.index.to_list(), df_train, cfg = cfg)
     validation_generator = DataGenerator(df_val.index.to_list(), df_val, cfg = cfg)
@@ -87,7 +108,7 @@ def train():
         start_from_epoch=5,
     )
 
-    callbacks = [early_stopping, WandbMetricsLogger()]
+    callbacks = [early_stopping, WandbMetricsLogger(), ClearMemory()]
 
     if cfg.model_name == "Deep":
         model = build_DeepModel(cfg)

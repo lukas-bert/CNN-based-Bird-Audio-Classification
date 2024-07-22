@@ -7,6 +7,9 @@ import tensorflow_io as tfio
 import tensorflow_probability as tfp
 import keras
 
+import gc
+from tensorflow.keras import backend as K
+
 import os
 from pathlib import Path
 import h5py
@@ -238,6 +241,16 @@ class DataGenerator(keras.utils.Sequence):
             y[i] = self.dataframe.label.iloc[ID]
         X = X.reshape(len(X), *self.dim, self.n_channels)
         return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
+
+################################################################################################################
+# Callback to clear RAM
+################################################################################################################
+
+class ClearMemory(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        print("Clearing Memory")
+        gc.collect()
+        K.clear_session()
 
 ################################################################################################################
 # Plotting
