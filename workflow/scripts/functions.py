@@ -16,13 +16,16 @@ import h5py
 import json
 
 ### Configurations
-df = pd.read_csv("../../data/dataset_train.csv")
 
-config = json.load(open("../resources/config.json", "r"))
+#df = pd.read_csv("../../data/dataset_train.csv")
+if Path("resources/config.json").exists():
+    config = json.load(open("resources/config.json", "r"))
+else:
+    config = json.load(open("../resources/config.json", "r"))
 
 class cfg:
     # random seed
-    seed = 42
+    seed = config["seed"]
 
     # audio clip settings
     sr = config["sampling_rate"] # 22050
@@ -40,7 +43,7 @@ class cfg:
     batch_size = config["batch_size"] # 32
     n_epochs = config["n_epochs"]
 
-    n_classes = len(np.unique(df.en))
+    n_classes = 46
 
 tf.keras.utils.set_random_seed(cfg.seed)
 ################################################################################################################
@@ -160,7 +163,7 @@ def predict_spec(spec, model, cfg=cfg):
     preds = model.predict(np.expand_dims(np.array(slices), axis = -1))
     return np.mean(preds, axis = 0) # return mean prediction
 
-def predict_file(df, ID, model, cfg=cfg):
+def predict_file(df, ID, model, cfg = cfg):
     """
     Predicts the class label for a given file
     inputs:
@@ -174,13 +177,19 @@ def predict_file(df, ID, model, cfg=cfg):
     hdf5_path = os.path.dirname(df.fullfilename.iloc[ID]) + "/spectrograms.h5"
     spec_length = df.length_spectrogram.iloc[ID]
     spec = load_spectrogram_slice(hdf5_path, name)
+    if spec_length < cfg.input_dim[1]:
+        spec = pad_spectrogram(spec, shape = cfg.input_dim, random = True)
+        preds = model.predict(np.expand_dims([spec], axis = -1), verbose=0)
+        return np.mean(preds, axis = 0) # return mean prediction
     slices = []
+    k = 0
     for i in range(spec_length//cfg.input_dim[1]):
+        k = i
         slices.append(spec[:,i*cfg.input_dim[1]:(i+1)*cfg.input_dim[1]])
     if spec_length%cfg.input_dim[1]/cfg.input_dim[1] > 5/cfg.duration:
         # consider last slice, only if it is longer than the shortest clips in the dataset 
-        slices.append(pad_spectrogram(spec[:, (i+1)*cfg.input_dim[1]:None], random = True))
-    preds = model.predict(np.expand_dims(np.array(slices), axis = -1))
+        slices.append(pad_spectrogram(spec[:, (k+1)*cfg.input_dim[1]:None], random = True))
+    preds = model.predict(np.expand_dims(np.array(slices), axis = -1), verbose=0)
     return np.mean(preds, axis = 0) # return mean prediction
 
 ################################################################################################################

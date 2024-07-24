@@ -314,7 +314,8 @@ __pycache__
 *.nav
 *.log
 *wandb/
-*models/
+workflow/models/*Basemodel*
+workflow/models/*test*
 *share/
 */share
 */.conda

@@ -25,8 +25,18 @@ warnings.filterwarnings("ignore")
 from functions import upsample_data, downsample_data, DataGenerator, ClearMemory
 from models import build_DeepModel
 
-model_file = "../models/final_model.keras"
-log_file = "../models/final_model_log.csv"
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('path_df', help = 'Path to the dataframe.')
+parser.add_argument('config', help = 'Configuration file')
+parser.add_argument('model_path', help = 'Path to the trained model')
+
+args = parser.parse_args()
+
+import json
+
+## Conifgurations
+config = json.load(open(args.config, "r"))
 
 ##########################
 # Settings to combat memory overflow -> crashes
@@ -36,8 +46,8 @@ from tensorflow.keras.mixed_precision import Policy, set_global_policy
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
-        policy = Policy('mixed_float16')
-        set_global_policy(policy)
+        #policy = Policy('mixed_float16')
+        #set_global_policy(policy)
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
             #tf.config.experimental.set_virtual_device_configuration(
@@ -48,8 +58,8 @@ if gpus:
 
 ##########################
 def train():
-    df = pd.read_csv("../../data/dataset_train.csv")
-    config = json.load(open("../resources/config.json", "r"))
+    df = pd.read_csv(args.path_df)
+    config = json.load(open(args.config, "r"))
 
     class cfg():
                 # random seed
@@ -87,57 +97,87 @@ def train():
     tf.keras.utils.set_random_seed(cfg.seed)
 
     ### Prepare data
-    df.fullfilename = "../" + df.fullfilename
+    #df.fullfilename = "../" + df.fullfilename
 
+    #df_train, df_val = train_test_split(df, test_size=0.2, random_state=42)
+    #df_val.reset_index(drop=True, inplace = True)
+    #df_train = upsample_data(df_train, thr = max(df_train.groupby("label")["label"].count())) #thr=cfg.thr)
 
-    df_train, df_val = train_test_split(df, test_size=0.2, random_state=42)
-    df_val.reset_index(drop=True, inplace = True)
-    df_train = upsample_data(df_train, thr=cfg.thr)
+    ### Stratified k-fold
+    from sklearn.model_selection import StratifiedKFold
 
-    training_generator = DataGenerator(df_train.index.to_list(), df_train, cfg = cfg)
-    validation_generator = DataGenerator(df_val.index.to_list(), df_val, cfg = cfg)
+    skf = StratifiedKFold(n_splits=5, shuffle=False)
+    for i, (train_index, val_index) in enumerate(skf.split(df, df.label)):
+        model_file = args.model_path + f"_{i+1}.keras"
+        log_file = args.model_path + f"_{i+1}_log.csv"
 
-    ### Initialize wandb
+        print("\n*********************************************")
+        print(f"Running Fold {i+1}/{5}")    
+        print(f"Model will be saved in {model_file}")
+        print("*********************************************\n")
 
-    run = wandb.init(
-        # Set the project where this run will be logged
-        project="CNN_Birdcall_classification",
-        # Track hyperparameters and run metadata
-        config=cfg,
-    )
+        df_train = df.iloc[train_index].copy().reset_index(drop = True)
+        df_val = df.iloc[val_index].copy().reset_index(drop = True)
 
-    ### Callbacks
+        # Upsample training dataframe to equal amount of files for all classes
+        df_train = upsample_data(df_train, thr = max(df_train.groupby("label")["label"].count())) #thr=cfg.thr)
+        df_train.reset_index(drop = True, inplace = True)
 
-    early_stopping = EarlyStopping(
-        monitor="val_accuracy",
-        patience=5,
-        verbose=0,
-        mode="max",
-        restore_best_weights=False,
-        start_from_epoch=5,
-    )
+        training_generator = DataGenerator(df_train.index.to_list(), df_train, cfg = cfg)
+        validation_generator = DataGenerator(df_val.index.to_list(), df_val, cfg = cfg)
 
-    model_checkpoint = ModelCheckpoint(model_file, 
-                                       monitor = "val_accuracy", 
-                                       verbose = 1, 
-                                       save_best_only=True,
-                                       mode = "max"
-                                    )
+        ### Initialize wandb
 
-    csv_log = CSVLogger(log_file, separator=",", append=True)
+        def class_to_dict(cls):
+            return {attr: getattr(cls, attr) for attr in dir(cls) if not attr.startswith("__")}
 
-    callbacks = [early_stopping, model_checkpoint, csv_log, WandbMetricsLogger(), ClearMemory()]
+        # Convert cfg class to dictionary
+        config_dict = class_to_dict(cfg)
+        config_dict["Fold"] = i+1
 
-    ### Training
+        run = wandb.init(
+            # Set the project where this run will be logged
+            project="CNN_Birdcall_classification",
+            # Set name of the run
+            name=f"FinalModel_{i+1}",
+            # Track hyperparameters and run metadata
+            config=config_dict,
+        )
 
-    model = build_DeepModel(cfg)
+        ### Callbacks
 
-    model.fit(training_generator, 
-              validation_data=validation_generator,
-              verbose = 2, 
-              epochs = cfg.n_epochs,
-              callbacks = callbacks
-              )
+        early_stopping = EarlyStopping(
+            monitor="val_accuracy",
+            patience=6,
+            verbose=0,
+            mode="max",
+            restore_best_weights=False,
+            start_from_epoch=30,
+        )
+
+        model_checkpoint = ModelCheckpoint(model_file, 
+                                           monitor = "val_accuracy", 
+                                           verbose = 1, 
+                                           save_best_only=True,
+                                           mode = "max"
+                                        )
+
+        csv_log = CSVLogger(log_file, separator=",", append=True)
+
+        callbacks = [early_stopping, model_checkpoint, csv_log, WandbMetricsLogger(), ClearMemory()]
+
+        ### Training
+
+        model = build_DeepModel(cfg)
+
+        model.fit(training_generator, 
+                  validation_data=validation_generator,
+                  verbose = 2, 
+                  epochs = cfg.n_epochs,
+                  callbacks = callbacks
+                  )
+        
+        run.finish()
 
 if __name__ == "__main__":
     train()
