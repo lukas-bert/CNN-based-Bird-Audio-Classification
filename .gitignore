@@ -316,6 +316,7 @@ __pycache__
 *wandb/
 workflow/models/*Basemodel*
 workflow/models/*test*
+workflow/models/Model*
 *share/
 */share
 */.conda
@@ -327,3 +328,4 @@ workflow/models/*test*
 .DS_Store
 ._.DS_Store
 **/._.DS_Store
+*plots/

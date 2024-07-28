@@ -87,6 +87,7 @@ def train():
         n_filters = config["n_filters"]
         dropout1 = config["dropout1"]
         dropout2 = config["dropout2"]
+        l2_lambda = config["l2_lambda"]
         tf_mask = config["tf_mask"]
         batch_norm = config["batch_norm"]
 
@@ -139,7 +140,7 @@ def train():
             # Set the project where this run will be logged
             project="CNN_Birdcall_classification",
             # Set name of the run
-            name=f"FinalModel_{i+1}",
+            name=f"2_FinalModel_{i+1}",
             # Track hyperparameters and run metadata
             config=config_dict,
         )

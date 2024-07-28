@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dense, Dropout, Activation, Flatten, Conv2D, MaxPooling2D, Input, BatchNormalization, LeakyReLU
+from tensorflow.keras.regularizers import l2
 import tensorflow_extra as tfe
 
 tfm_layer = tfe.layers.TimeFreqMask(freq_mask_prob=0.5,
@@ -113,7 +114,7 @@ def build_DeepModel(cfg):
     x = Flatten()(x)
 
     # Dense1
-    x = Dense(2*cfg.n_filters)(x)
+    x = Dense(2*cfg.n_filters, kernel_regularizer = l2(cfg.l2_lambda))(x)
     if cfg.batch_norm:
         x = BatchNormalization()(x)
     if cfg.activation == 'leaky_relu':
@@ -123,7 +124,7 @@ def build_DeepModel(cfg):
     x = Dropout(cfg.dropout2)(x)
 
     # Dense2
-    x = Dense(cfg.n_filters)(x)
+    x = Dense(cfg.n_filters, kernel_regularizer = l2(cfg.l2_lambda))(x)
     if cfg.batch_norm:
         x = BatchNormalization()(x)
     if cfg.activation == 'leaky_relu':

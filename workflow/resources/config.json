@@ -13,8 +13,9 @@
     "optimizer": "adam",
     "activation": "leaky_relu",
     "n_filters": 64,
-    "dropout1": 0.0828,
-    "dropout2": 0.2718, 
+    "dropout1": 0.2,
+    "dropout2": 0.4,
+    "l2_lambda": 0.0001, 
     "tf_mask": true,
     "batch_norm": false
 }
