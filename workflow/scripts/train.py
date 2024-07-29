@@ -140,7 +140,7 @@ def train():
             # Set the project where this run will be logged
             project="CNN_Birdcall_classification",
             # Set name of the run
-            name=f"2_FinalModel_{i+1}",
+            name=f"v3_2_FinalModel_{i+1}",
             # Track hyperparameters and run metadata
             config=config_dict,
         )

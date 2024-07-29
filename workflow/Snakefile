@@ -29,13 +29,13 @@ rule train_model:
         config = "resources/config.json",
         dataframe = path_storage + dataset_name + "_train.csv"
     output: 
-        model = "models/final_model_5.keras"
+        model = "models/v3_final_model_5.keras"
     shell: 
-        "python {input.script} {input.dataframe} {input.config} 'models/final_model'"
+        "python {input.script} {input.dataframe} {input.config} 'models/v3_final_model'"
 
 # execute all required rules
 rule all:   
     input: 
         path_storage + dataset_name + "_train.csv",
-        "models/final_model_5.keras"
+        "models/v3_final_model_5.keras"
 
