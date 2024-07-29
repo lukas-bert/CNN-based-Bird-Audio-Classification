@@ -23,6 +23,16 @@ rule get_spectrograms:
     shell: 
         "python {input.script} '../data/dataset_raw.csv' {input.config}" 
 
+rule get_audio_features:
+    input: 
+        script = "scripts/audio_features.py",
+        dataframe = path_storage + dataset_name + "_t{rain_est}.csv"
+    output: 
+        path_storage + dataset_name + "_t{rain_est}_features.csv"
+    threads: 16
+    shell: 
+        "python {input.script} {input.dataframe}"
+
 rule train_model:
     input: 
         script = "scripts/train.py",
@@ -37,5 +47,6 @@ rule train_model:
 rule all:   
     input: 
         path_storage + dataset_name + "_train.csv",
+        path_storage + dataset_name + "_test_features.csv",
         "models/v3_final_model_5.keras"
 
