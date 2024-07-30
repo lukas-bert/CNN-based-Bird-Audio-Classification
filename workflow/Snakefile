@@ -16,12 +16,12 @@ rule get_spectrograms:
     input: 
         script = "scripts/compute_spectrograms.py",
         config = "resources/config.json",
-       # dataframe = path_storage + dataset_name + "_raw.csv"
+        dataframe = path_storage + dataset_name + "_raw.csv"
     output: 
         path_storage + dataset_name + "_train.csv",
         path_storage + dataset_name + "_test.csv"
     shell: 
-        "python {input.script} '../data/dataset_raw.csv' {input.config}" 
+        "python {input.script} {input.dataframe} {input.config}" 
 
 rule get_audio_features:
     input: 
