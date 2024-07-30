@@ -54,43 +54,51 @@ def compute_features(row):
         print(e)
         print(f"Error when loading file at index {row['index']}.")
         print(f"Saving NaN values")
-        features = {}
-        for feature in feature_names:
-            features[feature] = float(-np.inf)
-        return features
+        return {feature: np.nan for feature in feature_names}
+    
     features = {}
-    # Time-domain features
-    features["zcr"] = np.mean(librosa.feature.zero_crossing_rate(y))
-    features["rms"] = np.mean(librosa.feature.rms(y=y))
+    try:
+        # Time-domain features
+        features["zcr"] = np.mean(librosa.feature.zero_crossing_rate(y))
+        features["rms"] = np.mean(librosa.feature.rms(y=y))
 
-    # Frequency-domain features
-    features["spectral_centroid"] = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))
-    features["spectral_bandwidth"] = np.mean(librosa.feature.spectral_bandwidth(y=y, sr=sr))
-    
-    spectral_contrast = np.mean(librosa.feature.spectral_contrast(y=y, sr=sr), axis=1)
-    for k in range(7):
-        features[f"spectral_contrast{k+1}"] = spectral_contrast[k]
+        # Frequency-domain features
+        features["spectral_centroid"] = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))
+        features["spectral_bandwidth"] = np.mean(librosa.feature.spectral_bandwidth(y=y, sr=sr))
 
-    features["spectral_flatness"] = np.mean(librosa.feature.spectral_flatness(y=y))
-    features["spectral_rolloff"] = np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr))
-    
-    # Cepstral features
-    mfccs = np.mean(librosa.feature.mfcc(y=y, sr=sr), axis=1)[:n_mfcc]
-    for j in range(n_mfcc):
-        features[f"mfcc_{j+1}"] = mfccs[j]
-    # Tonnetz
-    tonnetz = np.mean(librosa.feature.tonnetz(y=y, sr=sr), axis=1)
-    for k in range(6):
-        features[f"tonnetz{k+1}"] = tonnetz[k]
-    # Chroma
-    chroma = np.mean(librosa.feature.chroma_stft(y=y, sr=sr), axis=1)
-    for k in range(12):
-        features[f"chroma{k+1}"] = chroma[k]
-    # Statistical features
-    features["mean"] = np.mean(y)
-    features["std_dev"] = np.std(y)
-    features["skewness"] = scipy.stats.skew(y)
-    features["kurtosis"] = scipy.stats.kurtosis(y)
+        spectral_contrast = np.mean(librosa.feature.spectral_contrast(y=y, sr=sr), axis=1)
+        for k in range(7):
+            features[f"spectral_contrast{k+1}"] = spectral_contrast[k]
+
+        features["spectral_flatness"] = np.mean(librosa.feature.spectral_flatness(y=y))
+        features["spectral_rolloff"] = np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr))
+
+        # Cepstral features
+        mfccs = np.mean(librosa.feature.mfcc(y=y, sr=sr), axis=1)[:n_mfcc]
+        for j in range(n_mfcc):
+            features[f"mfcc_{j+1}"] = mfccs[j]
+
+        # Tonnetz features
+        tonnetz = np.mean(librosa.feature.tonnetz(y=y, sr=sr), axis=1)
+        for k in range(6):
+            features[f"tonnetz{k+1}"] = tonnetz[k]
+        
+        # Chroma features
+        chroma = np.mean(librosa.feature.chroma_stft(y=y, sr=sr), axis=1)
+        for k in range(12):
+            features[f"chroma{k+1}"] = chroma[k]
+
+        # Statistical features
+        features["mean"] = np.mean(y)
+        features["std_dev"] = np.std(y)
+        features["skewness"] = scipy.stats.skew(y)
+        features["kurtosis"] = scipy.stats.kurtosis(y)
+        
+    except Exception as e:
+        print(f"Error computing features for file {row['fullfilename']}: {e}")
+        # Fill with NaN in case of computation errors
+        return {feature: np.nan for feature in feature_names}
+
     return features
 
 def parallel_feature_extraction(df):
@@ -126,8 +134,18 @@ if __name__ == "__main__":
     print("Using ", cpu_count(), " cores.")
     for label in tqdm(sorted(df['label'].unique())):
         print(f"Class {label+1}/{len(df['label'].unique())}")
-        df[df.label == label][feature_names] = parallel_feature_extraction(df[df.label == label])
-        df.to_csv(savefile_copy, index = False)
+        label_df = df[df.label == label]
+        if min((label_df[feature_names].notna() * label_df[feature_names] != - np.inf).mean()) > .95:
+            print(f"Features for class {label} already exist. Skipping computation.")
+            continue
+        else:
+            feature_df = parallel_feature_extraction(label_df)
+
+            # Update original DataFrame with new features
+            df.loc[df.label == label, feature_names] = feature_df
+
+            # Save a copy of the progress
+            df.to_csv(savefile_copy, index=False)
     
     df.to_csv(savefile, index = False)
 
