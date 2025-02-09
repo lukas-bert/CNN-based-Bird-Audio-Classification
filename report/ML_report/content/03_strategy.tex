@@ -1,0 +1,127 @@
+\section{Design and Implementation}
+\label{sec:strategy}
+As explained in the introduction (\Cref{sec:introduction}), the aim of this project is to train a convolutional neural network capable of classifying different bird species 
+using spectrogram audio data. In this section, methodological details of the solution approach are explained. First, the general concept of the solution to the research question 
+and the data pipeline are described. After that, the choice of model architecture and hyperparameter optimizations are discussed.
+
+\subsection{Solution Concept}
+\label{subsec:concept}
+The dataset described in the previous section consists of audio recordings of varying durations, which are converted to decibel mel-spectrograms 
+(referred to as \enquote{spectrograms} hereafter). To process this data in a CNN, the input shape must be fixed. 
+Therefore, the classifier is trained with spectrograms representing fixed-length audio clips. The duration of these audio clips is a hyperparameter 
+optimized in \Cref{subsec:hyperparameter}. To make a prediction for a full-length audio recording, the audio's spectrogram is split into slices of fixed length. 
+The last slice is either discarded if it corresponds to less than $\qty{5}{\second}$ of audio or randomly padded with zeros to match the expected shape otherwise. 
+The prediction for the entire audio is then calculated as the mean prediction of all spectrogram slices. This procedure has the advantage that empty sequences in the audio and parts 
+where different species than the target species can be heard are averaged out in the prediction, increasing overall accuracy. \\
+Another important aspect of this project is the validation of the training process and hyperparameter optimization. To achieve this, $\qty{20}{\percent}$ of the training data are
+used for validation when training a model. Since this effectively reduces the available training data for the final model, a \textit{stratified k-fold} with $k = 5$ is used. 
+This results in five classifiers, each trained with different validation data, allowing to assess the generalization of the method. 
+Finally, the labels of the test data are predicted using all five classifiers in an ensemble, and the average prediction is taken, which should benefit 
+the accuracy and robustness of the method. For the Implementation of the neural network, the machine learning libraries \textit{tensorflow} \cite{tensorflow}, \textit{Keras}
+\cite{keras} and \textit{Scikit-Learn} \cite{scikit-learn} are used.
+
+\subsection{Data Pipeline}
+A difficulty encountered in this project is processing large amounts of data: in total, over $\qty{50}{\giga\byte}$ of audio data must be analyzed. 
+Ideally, a randomly picked audio clip of fixed duration would be drawn from the training data, the spectrogram computed, and then further passed to the neural network. 
+This approach would allow audio augmentation, such as pitch shifting, to be applied directly to the audio itself but requires substantially more computational resources for data loading. 
+Since training times with this approach are impractical, a different approach is chosen instead. Before starting the training and optimization process, 
+the spectrograms are computed for all audio files and saved to storage in \texttt{hdf5} files. This excludes the possibility of audio augmentation 
+but drastically reduces training times and the bottleneck in data loading. As a consequence, the parameters used in the computation of the spectrogram cannot be optimized 
+as hyperparameters and must be set a priori. The parameters for the spectrogram computation are the number of mel frequency bins \texttt{n\_mels}, which defines the $y$-axis 
+resolution of the spectrogram; the audio sampling rate \texttt{sr}; the window size of the STFT \texttt{n\_fft}; and the hop length of the STFT \texttt{hop\_length}. 
+The window size describes the number of sampling points used in one STFT, and the hop length describes the step size of the STFT. 
+The $x$-axis resolution of the spectrogram is then given by $\texttt{duration} \cdot \texttt{sr}/\texttt{hop\_length} + 1$. 
+The maximum frequency of the spectrogram is determined by $\texttt{sr}/2$, and the minimum frequency is set to $\num{0}$. The amplitude is restricted between $\num{0}$ and 
+$\qty{80}{\deci\bel}$. For the other parameters, the values are chosen to sufficiently resolve distinct audio features while maintaining a low dimensionality. 
+The parameter values are listed in \autoref{tab:paramter_spec}.
+\begin{table}[h]
+    \centering
+    \caption{Parameters of the spectrograms.}
+    \label{tab:paramter_spec}
+    \begin{tabular}{ll}
+        \toprule
+        \small
+        \textbf{Parameter} & \textbf{Value} \\
+        \midrule
+        Sampling Rate (\texttt{sampling\_rate}) & $\qty{22050}{\hertz}$ \\
+        Hop Length (\texttt{hop\_length}) & 2048 \\
+        Number of FFT Points (\texttt{nfft}) & 4096 \\
+        Number of Mel Bands (\texttt{n\_mels}) & 128 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+All audio files are resampled to the desired sampling rate, and the spectrograms are computed and saved. While training a model, a random slice of the spectrograms is loaded for 
+each recording. If a spectrogram is shorter than the required input size, it is randomly padded with zeros. This procedure results in a constantly changing training dataset, 
+which reduces the possibility of overfitting and increases the diversity of the training data.
+
+\subsection{Model Architecture}
+\label{subsec:architecture}
+The architecture of the convolutional neural network is central to the project's success in accurately classifying different bird species. 
+The model needs to have high capacity to effectively extract meaningful audio features from the spectrograms, be robust against noise and variability, 
+and generalize well to the validation data. Furthermore, efficiency and scalability are required to process large amounts of data. \\
+The models that are tested include a simple model consisting of blocks of convolution and dense layers, as well as the \texttt{EfficientNetB0} \cite{tan2019efficientnet}, 
+\texttt{DenseNet121} \cite{huang2017densely}, and \texttt{ResNet50} \cite{he2016deep} architectures. EfficientNetB0, DenseNet121, and ResNet50 are architectures 
+designed for image classification and can be directly imported into Keras. Although these models are known for their good accuracy on image classification tasks, 
+they do not produce satisfactory results for this project and are outperformed by the simpler model. 
+The model architecture of the best-performing model tested can be seen in \autoref{fig:architecture}.
+\begin{figure}
+    \centering
+    \includegraphics[width = .9\textwidth]{content/plots/cnn.pdf}
+    \caption{Sketch of the CNN architecture used for this project. Spectrogram from \cite{audio3}.}
+    \label{fig:architecture}
+\end{figure}
+The raw input spectrograms, with a shape of $162 \times 128$, are first normalized using a \texttt{ZScoreMinMax} layer from the extension \textit{tensorflow\_extra} 
+\cite{tensorflow_extra}, which rescales the inputs to a mean of $0$ and unit variance and then applies min-max scaling between $\num{0}$ and $\num{1}$. 
+After normalization, time-frequency masking, implemented in a layer from the same library, is applied to enhance the generalization and robustness of the model. 
+The augmented spectrograms are then processed through a series of convolutional blocks, each consisting of a \texttt{Conv2D} layer with a $3 \times 3$ kernel, followed by 
+an activation layer and a \texttt{MaxPooling2D} layer with a $2 \times 2$ pool size. No zero padding is applied in either the convolutional or pooling layers to reduce the 
+dimensionality of the data. The number of filters per convolution layer increases by a factor of $2$ and is determined alongside the number of convolution blocks 
+during hyperparameter optimization in \Cref{subsec:hyperparameter}.
+After the convolutional blocks, the data are flattened and passed to \enquote{dense blocks}, which consist of a dense layer 
+and an activation function. Here, the number of nodes decreases by a factor of $2$ in each block. The output of the neural network is produced in the final dense layer, 
+which uses the \textit{softmax} activation function and has $\num{46}$ output nodes. For the loss function, \textit{categorical crossentropy} is used. 
+More details on the convolutional and dense blocks are discussed in the next section.
+
+\subsection{Hyperparameter Optimization}
+\label{subsec:hyperparameter}
+Due to the long training times of the networks, hyperparameter optimization posed a major challenge. Consequently, a grid search over the entire hyperparameter space, 
+including cross-validation, was not feasible. Instead, the effects of structural hyperparameters are tested on individual models and compared using the tool \textit{Weights \& Biases} 
+(WandB) \cite{wandb}. For other hyperparameters, such as the duration of the audio clips, dropout percentages, or the number of convolutional filters and nodes in a dense layer, 
+a random search using WandB's \textit{sweep} function is performed. The \textit{sweep} function allows to distribute individual runs of the random search to multiple machines, 
+greatly enhancing the possibilities for hyperparameter optimization in this project. \\
+After choosing the basic model architecture as explained in \Cref{subsec:architecture}, a first sweep is carried out to determine the activation function 
+used in the convolutional and dense layers, the number of convolutional blocks and filters, and the optimizer of the model. \autoref{fig:sweep1} depicts the validation 
+accuracy of $\num{52}$ individual runs in dependence on the used hyperparameters.
+\begin{figure}
+    \centering 
+    \includegraphics[width = .9\textwidth]{content/plots/sweep1.png}
+    \caption{Hyperparamters of the first sweep and their impact on validation accuracy. Since all hyperparameters are discrete in this study, the curves overlap at the nodes,
+            which makes \enquote{selu} appear as the best activation function. However, this is not the case.}
+    \label{fig:sweep1}
+\end{figure}
+Good hyperparameter values can be identified by searching for clusters of brighter colors at the nodes in the graphic. From this search, the number of convolutional blocks 
+(model complexity) is determined to be $\num{3}$, the optimizer is chosen as \enquote{Adam}, and the number of filters is further tested with values of $\num{32}$ and $\num{64}$, 
+as both yielded good results. Although it does not seem so in \autoref{fig:sweep1}, the impact of the activation function is not as significant, and therefore, \enquote{leaky\_relu} 
+is chosen because it was used in the run with the overall best validation accuracy. \\
+In a second sweep, another $\num{29}$ models are trained to study the impact of time-frequency masking (see \ref{subsec:architecture}) and batch normalization layers, 
+the number of convolutional filters, and the duration of the audio clips used in training. Batch normalization layers are placed between the convolutional or dense layers 
+and their respective activation functions and scale the inputs to zero mean and unit variance. This is expected to accelerate training, improve convergence, and help stabilize 
+the learning process. However, batch normalization is not included in the final model, as it causes strong oscillations in the validation accuracy, as shown in \autoref{fig:sweep2_acc}.
+The impact of the other hyperparameters in this sweep can be seen in \autoref{fig:sweep2}.
+\begin{figure}
+    \centering
+    \includegraphics[width = .6\textwidth]{content/plots/sweep2_acc.png}
+    \caption{Validation accuracy against epochs for the runs of the second sweep. For some curves, oscillations due to batch normalization can be observed.}
+    \label{fig:sweep2_acc}
+\end{figure}
+\begin{figure}
+    \centering 
+    \includegraphics[width = .85\textwidth]{content/plots/sweep2.png}
+    \caption{Hyperparamters of the second sweep and their impact on validation accuracy.}
+    \label{fig:sweep2}
+\end{figure}
+The number of filters is determined to be $\num{64}$, and the duration is chosen as $\qty{15}{\second}$; shorter durations seem to reduce, and longer durations do not benefit 
+the validation accuracy.
+In the final sweep, $\num{22}$ models are trained to determine suitable values for the dropout percentages of dropout layers, which are placed after the last convolutional layer 
+(dropout1) and the first dense layer (dropout2). Including more dropout layers is found to significantly reduce the model's overall performance. The best dropout values are
+$\text{dropout1} = \num{0.0828}$ and $\text{dropout2} = \num{0.2718}$. A plot of the results of this sweep can be found in Appendix \ref{sec:Appendix3}.

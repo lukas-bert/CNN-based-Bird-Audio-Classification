@@ -1,0 +1,26 @@
+\section{Conclusion}
+\label{sec:conclusion}
+This project investigated the research question of how accurately a CNN can classify $\num{46}$ different European songbird species based on spectrograms computed from audio recordings. 
+After building a robust and efficient data pipeline, different model architectures were tested, and hyperparameter optimization for the most promising model architecture was performed. 
+For the evaluation, a total of five networks were trained using a stratified $k$-fold. The predictions on a previously separated test dataset showed an (balanced) accuracy score of
+$\qty{90.02}{\percent}$ ($\qty{88.85}{\percent}$). To compare this approach to a simpler method, an ensemble of $k$-Nearest Neighbors classifiers 
+was trained using $\num{45}$ audio features extracted from the raw waveforms of the audio. Here, the evaluation returned values of $\qty{33.49}{\percent}$ ($\qty{31.95}{\percent}$) for 
+the (balanced) accuracy score. 
+The convolutional neural network clearly outperforms the $k$NN classifier at this task. This is not surprising, as the $k$NN relies on pre-computed audio features 
+that do not contain as much information as the $\num{162} \times \num{128}$ sized spectrograms used in the CNN, which is designed to learn the most meaningful features on its own.
+Still, the $k$NN's performance is surprisingly good, compared to the statistical baseline of $\qty{3.34}{\percent}$. An advantage of the $k$NN classifier are the lower fitting and 
+prediction times compared to the CNN. After the audio features are computed, the entire training process for the $k$NN takes just a few seconds, whereas the convolutional neural 
+network requires several hours of training.\\ 
+Considering the number of classes, the CNN demonstrated excellent performance in distinguishing between the different bird species. An increase in accuracy could potentially be 
+achieved by using a more complex model architecture and further optimizing the hyperparameter space. However, this would require more computational resources and time. Additionally, 
+a larger dataset and higher data quality could improve the results. Nevertheless, the research question can be answered positively: Modern machine learning algorithms, 
+such as neural networks, are well-suited for complex classification tasks and can aid humans in research, such as monitoring bird species populations. In conclusion, 
+the project can be viewed as a successful demonstration of the strengths and practical benefits of machine learning methods in real-world applications.
+
+% - write summary
+% - knn ist dogshit im vergleich zum CNN, aber actually garnicht so arsch
+% - komplexe Problemstellung kann nicht gut durch einfache features gelöst werden -> braucht CNN
+% - CNN performance ok, considering the number of classes
+% - better perfromance with more data, deeper hyperparameter optimization, more complex models
+% - would require a lot more computational resources and time
+% - conluding: good results, strength of CNN is shown

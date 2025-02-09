@@ -1,0 +1,41 @@
+\section{Introduction}
+\label{sec:introduction}
+Even if it may not seem so at first glance, birds play a crucial role in our ecosystem. They connect different habitats by spreading seeds and transporting fish spawn. 
+Just like bees and butterflies, some bird species, such as \textit{hummingbirds} and \textit{honeycreepers}, also significantly contribute to the pollination of fruits and flowers. 
+Moreover, birds are an important part of our ecosystem's food chain: for example, most birds feed on invertebrates and thus act as nature's pest control units. \\
+By monitoring bird populations, we can gain valuable insights into the health of our ecosystem.
+A challenge that arises in this task is the difficulty of spotting birds, especially in dense vegetation.
+However, their calls can often be heard over long distances without a direct line of sight.
+Identifying birds by their calls is also challenging due to the vast number of species and subspecies, even in less biodiverse regions, especially among songbirds, 
+which are hard to differentiate.
+Moreover, classifying different bird species by sound requires expert knowledge and is a time-consuming process. \\
+A solution to this problem could be provided by the automated classification of bird songs in soundscape recordings. Raw audio wave formats are difficult to handle due to their high data 
+density and lack of interpretability. Hence, the common approach in analyzing audio files is to transition to the time-frequency domain and use 
+spectrograms instead. 
+A spectrogram is a visual representation of the time evolution of the frequency spectrum of a signal. It is created by performing a series of short-time Fourier transforms (STFTs)
+\cite{Cohen1964} on a signal. The $x$-axis represents time, the $y$-axis represents frequency, and the intensity or color of each point represents the amplitude or power of the 
+frequency at that time. To better reflect human perception of sound, the frequency spectrum can be transformed to the mel scale \cite{Stevens1937}, and amplitudes can be 
+converted to decibels (logarithmic scaling). 
+This is also beneficial in machine learning, where log mel spectrograms are used as input features for models such as convolutional neural networks (CNNs). 
+Their ability to capture the characteristics of two-dimensional data makes them especially useful for tasks involving audio classification and recognition using spectrograms 
+\cite{Chollet2017}.\\
+This leads to the research question of this report:
+\begin{center}
+    \textbf{How accurately can different European bird species be classified by analyzing audio recordings using convolutional neural networks and audio processing?}
+\end{center}
+To investigate this question, this report presents the selection of a dataset in \Cref{sec:dataset} and a documentation of the solution approach in \Cref{sec:strategy}.
+Five individual CNNs are trained using randomly picked spectrogram slices equivalent to $\qty{15}{\second}$ audio clips and used in an ensemble to predict audio recordings of 
+different durations. The results of this study are evaluated and presented in \Cref{sec:results} and compared to an alternative method, making use of a simpler machine learning 
+algorithm in \Cref{sec:alternative}. Finally, the discussion and conclusion are provided in \Cref{sec:conclusion}.
+
+
+%- introduce importance for birds in the ecosystem
+%    - connect habitats
+%    - pest control / eat insects
+%    - samen verteilen
+%    - fisch leich verteilen
+%    - maybe cite some study that shows importance of birds
+%- challenges to monitor bird population etc.
+%- required expert knowledge, time consuming
+%- possibility to automatically detect species in soundscape recordings
+%- use CNNs to analyze spectrograms because CNNs are very good at 2D data analysis

@@ -1,0 +1,24 @@
+\section{Alternative Method}
+\label{sec:alternative}
+To compare the solution presented in this report to an alternative method, one of the simplest machine learning algorithms is chosen: the $k$-Nearest Neighbors ($k$NN) classifier.
+The $k$NN algorithm computes the Euclidean distance in the feature space between a datapoint to classify and the saved training data. Therefore, the spectrograms cannot be used 
+as input for this algorithm. Instead, $\num{45}$ audio features are computed on the raw audio wave forms. These features include the zero crossing rate, measures for the loudness of 
+the signal, spectral features, statistical features like the mean and standard deviation, but also features used in music analysis, like spectral contrast and chroma features.
+For all features, the mean with respect to their time evolution is taken.
+The complete list of features can be found in Appendix \ref{sec:Appendix4}. 
+Despite the high dimensionality of the feature space, these features can directly be used to train the $k$NN classifier. Feature reduction by e.g. using principal component 
+analysis is not required and is found to reduce the accuracy on validation data.
+Since the computed features have different magnitudes, scaling is needed. Different scaling methods are tested and a \textit{Quantile Scaler} from the library \textit{Scikit-Learn} 
+\cite{scikit-learn} with an output normal distribution is found to yield the highest accuracy on validation data.
+Again, a stratified $k$-fold with $k=5$ is performed and five individual $k$NN classifiers are fitted 
+with their respective training data. For each classifier, different values for $k$ neighbors are tested on the validation data and the one with the highest validation accuracy is chosen.
+The five $k$NN classifiers are evaluated on the same test data as the CNN by taking the averaged prediction of the different classifiers.
+The confusion matrix of the $k$NN ensemble is shown in \autoref{fig:cm_knn}.
+\begin{figure}
+    \centering
+    \includegraphics[width = .7\textwidth]{content/plots/cm_knn.pdf}
+    \caption{Confusion matrix of the predictions on test data for the $k$NN ensemble.}
+    \label{fig:cm_knn}
+\end{figure}
+As can be seen, the prediction is significantly less accurate than the neural networks prediction.
+The (balanced) accuracy reads $\qty{33.49}{\percent}$ ($\qty{31.95}{\percent}$) for the $k$NN ensemble.

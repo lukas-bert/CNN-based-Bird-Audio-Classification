@@ -1,0 +1,63 @@
+\section{Results}
+\label{sec:results}
+After determining the best hyperparameters of the model, a final set of models is trained and evaluated on the test data. As explained in \Cref{subsec:concept}, 
+a stratified $k$-fold with $k=5$ is employed to train five different models exploiting all available training data while maintaining the ability to check for generalization on 
+a validation data subset. The models are trained for a minimum of $\num{30}$ epochs, and early stopping is used to halt training if the validation accuracy does not increase for six 
+consecutive epochs. The model states with the highest validation accuracy are saved and used for evaluation.
+\autoref{fig:mean_metrics_v1} shows the mean loss and accuracy of all five models on training and validation data.
+\begin{figure}
+    \centering
+    \includegraphics[width = \textwidth]{content/plots/mean_metrics_v1.pdf}
+    \caption{Mean loss and accuracy of the five classifiers on training and validation data.}
+    \label{fig:mean_metrics_v1}
+\end{figure}
+As overfitting becomes apparent starting from epoch $\num{40}$, the models are retrained using a higher dropout percentage ($\text{dropout1} = \num{0.15}$, $\text{dropout2} = \num{0.3}$) 
+and including additional L2 regularization in the dense layers with a strength of $\texttt{l2\_lambda = \num{0.0001}}$. 
+The mean loss and accuracy for the retrained models is shown in \autoref{fig:mean_metrics_v3}.
+\begin{figure}
+    \centering
+    \includegraphics[width = \textwidth]{content/plots/mean_metrics_v3.pdf}
+    \caption{Mean loss and accuracy of the five classifiers after retraining the model with more regularization.}
+    \label{fig:mean_metrics_v3}
+\end{figure}
+\\
+The scores for the accuracy and balanced accuracy on the test dataset are 
+\begin{align*}
+    \text{accuracy} &= \qty{90.02}{\percent} & \text{balanced accuracy} &= \qty{88.85}{\percent}
+\end{align*}
+with a statistical baseline of $\qty{3.34}{\percent}$ for randomly guessing the most frequent class.
+The values on training data are $\qty{93.88}{\percent}$ ($\qty{93.82}{\percent}$) for the (balanced) accuracy score.
+In \autoref{fig:cm}, the confusion matrix for predictions on the test data is shown. 
+\begin{figure}
+    \centering
+    \includegraphics[width = .7\textwidth]{content/plots/cm.pdf}
+    \caption{Confusion matrix of the predictions on test data.}
+    \label{fig:cm}
+\end{figure}
+The majority of entries lie on the diagonal, indicating that the overall classification is successful. However, some classes are less accurately classified than others. 
+Class $\num{24}$, the Eurasian Tree Sparrow (\enquote{Passer montanus}), has the lowest accuracy at $\qty{45.45}{\percent}$, with $\qty{38.64}{\percent}$ of cases mistakenly classified 
+as the House Sparrow (\enquote{Passer domesticus}) (33).
+This appears reasonable, as the two species are closely related and can be easily mistaken. 
+Other examples are the long-eared owl (36) at $\qty{71.79}{\percent}$, which is mistaken with an Eurasian eagle-owl in $\qty{17.95}{\percent}$.
+Further, for at least $\qty{5.14}{\percent}$ of the wrongly classified data, 
+the predicted bird species is listed in the category \enquote{also}, which lists other bird species present in the recording. For $\qty{57.43}{\percent}$ of the wrong classifications, 
+the label with the second-highest probability is the correct label.
+Nevertheless, the classification output has some errors. In \autoref{fig:example_probs}, the classifier's output for the true label and all other labels is plotted for training and test
+data for two examples of good and poor classification.
+\begin{figure}
+    \centering
+    \begin{subfigure}[c]{0.45\textwidth}
+        \centering
+        \includegraphics[width = .95\textwidth]{content/plots/prob_class_21.pdf}
+        \subcaption{Poor separation.}
+    \end{subfigure}
+    \begin{subfigure}[c]{0.45\textwidth}
+        \centering
+        \includegraphics[width = .95\textwidth]{content/plots/prob_class_31.pdf}
+        \subcaption{Good separation.}
+    \end{subfigure}
+    \caption{Two examples of classification output for training and test data for the target class and all other classes. One example shows a poor- and the other a good separation.}
+    \label{fig:example_probs}
+\end{figure}
+Especially for the example of the poor classification performance, overfitting is present to some extent, as the classification on training data seems to have a better
+separation between the true and wrong labels than for the test data. However, this might also result from random fluctuations given the relatively small test dataset.
